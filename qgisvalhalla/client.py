@@ -13,24 +13,25 @@ from qgis.core import (QgsPointXY,
 
 from .utils import transformToWGS, decodePolyline6
 
+from qgisvalhalla.connectors import HttpConnector
+
 class RoutingException(Exception):
     pass
-    
+
+TEST_URL = "https://valhalla.gis-ops.com/osm"
+
 class ValhallaClient():
 
-    def __init__(connector = None):
-        self.connector = connector or ConsoleConnector
+    def __init__(self, connector = None):
+        self.connector = connector or HttpConnector(TEST_URL)
 
 
-    def route(points, crs, options, shortest=False):
+    def route(self, qgspoints, options, shortest=False):
         """
         Computes a route
 
-        :param points: A list of QgsPointsXY with the points that define the route
+        :param points: A list of QgsPointsXY in epsg4326 crs with the points that define the route
         :type points: list
-
-        :param crs: The crs in which the points coordinates are expressed
-        :type crs: QgsCoordinateReferenceSystem
 
         :param options: The options for computing the route
         :type options: dict
@@ -43,24 +44,22 @@ class ValhallaClient():
         """
 
 
-        points = pointsFromQgsPoints(qgspoints)
+        points = self.pointsFromQgsPoints(qgspoints)
         try:
-            response = self.connector.route(points, options)
+            response = self.connector.route(points, options, shortest)
         except Exception as e:
             raise RoutingException(str(e))
-        route = createRouteFromResponse(response)
+        route = self.createRouteFromResponse(response)
         return route
 
-    def pointsFromQgsPoints(qgspoints, crs):
+    def pointsFromQgsPoints(self, qgspoints):
         points = []
-        xform = transformToWGS(crs)
-        for qgspoint in qgspoints:
-            transformed = xform.transform(qgspoint)
-            points.append({"lon": round(transformed.x(), 6), "lat": round(transformed.y(), 6)})
+        for qgspoint in qgspoints:     
+            points.append({"lon": round(qgspoint.x(), 6), "lat": round(qgspoint.y(), 6)})
         return points
 
 
-    def createRouteFromResponse(response):
+    def createRouteFromResponse(self, response):
         """
         Build output layer based on response attributes for directions endpoint.
 

@@ -42,8 +42,21 @@ class ConsoleConnector(Connector):
         return response
 
 
+import requests
+import json
 
+class HttpConnector(Connector):
 
-class HttpConnector():
-    #TODO
-    pass
+    def __init__(self, url):
+        self.url = url
+
+    def _request(self, endpoint, payload):
+        url = f"{self.url}/{endpoint}?json={payload}"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+
+    def route(self, points, options, shortest):
+        params = self.prepareParameters(points, options, shortest)
+        response = self._request("route", json.dumps(params))
+        return response

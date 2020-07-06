@@ -50,7 +50,7 @@ class ValhallaClient():
         except Exception as e:
             raise RoutingException(str(e))
         route = self.createRouteFromResponse(response)
-        return route
+        return route, response
 
     def pointsFromQgsPoints(self, qgspoints):
         points = []
